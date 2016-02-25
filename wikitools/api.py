@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # Copyright 2008-2013 Alex Zaddach (mrzmanwiki@gmail.com)
 
 # This file is part of wikitools.
@@ -50,7 +50,7 @@ class APIDisabled(APIError):
 	
 class APIRequest:
 	"""A request to the site's API"""
-	def __init__(self, wiki, data, write=False, multipart=False):
+	def __init__(self, wiki, data, write=False, multipart=False, getrequest=False):
 		"""	
 		wiki - A Wiki object
 		data - API parameters in the form of a dict
@@ -79,10 +79,10 @@ class APIRequest:
 				self.encodeddata = self.encodeddata + singledata
 		else:
 			self.encodeddata = urlencode(self.data, 1)
-			self.headers = {
-				"Content-Type": "application/x-www-form-urlencoded",
-				"Content-Length": str(len(self.encodeddata))
-			}
+                        self.headers = { "Content-Type": "application/x-www-form-urlencoded" }
+                        if not getrequest :
+                                self.headers["Content-Length"] = str(len(self.encodeddata))
+
 		self.headers["User-agent"] = wiki.useragent
 		if gzip:
 			self.headers['Accept-Encoding'] = 'gzip'
@@ -95,7 +95,11 @@ class APIRequest:
 			self.opener = urllib2.build_opener(urllib2.HTTPDigestAuthHandler(wiki.passman), urllib2.HTTPCookieProcessor(wiki.cookies))
 		else:
 			self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(wiki.cookies))
-		self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
+                if getrequest:
+                        self.request = urllib2.Request(self.wiki.apibase + '?' + self.encodeddata, None, self.headers)
+                else:
+                        self.request = urllib2.Request(self.wiki.apibase, self.encodeddata, self.headers)
+
 		
 	def setMultipart(self, multipart=True):
 		"""Enable multipart data transfer, required for file uploads."""
